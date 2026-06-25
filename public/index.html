@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live TV</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Live TV</h1>
+  </header>
+  <main>
+    <aside id="channel-list"></aside>
+    <section id="player">
+      <video id="video-player" controls autoplay muted playsinline></video>
+      <div id="youtube-player"></div>
+      <div id="controls-bar">
+        <div id="res-selector" style="display:none">
+          <label>Res:</label>
+          <select id="res-select"></select>
+        </div>
+      </div>
+      <div id="placeholder">
+        <div id="no-channel">Pilih channel untuk mulai menonton</div>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="app.js"></script>
+</body>
+</html>
