@@ -2,33 +2,49 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live TV</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <button id="menu-btn" aria-label="Menu">&#9776;</button>
-    <h1>Live TV</h1>
+    <div class="logo">&#9673; Live TV</div>
+    <div class="search-wrap">
+      <span class="search-icon">&#128269;</span>
+      <input id="search" type="text" placeholder="Cari channel...">
+    </div>
   </header>
-  <div id="backdrop"></div>
+
   <main>
-    <aside id="channel-list"></aside>
-    <section id="player">
-      <div id="status-overlay" class="hidden">
-        <div class="status-spinner"></div>
-        <div id="status-msg"></div>
+    <nav id="country-nav"></nav>
+    <section id="browse">
+      <div id="grid"></div>
+    </section>
+
+    <section id="player" class="hidden">
+      <div class="player-bar">
+        <button id="back"><span>&#8592;</span> Kembali</button>
+        <div class="player-info">
+          <span id="player-title"></span>
+          <span id="player-sub"></span>
+        </div>
       </div>
-      <div id="video-player">
-        <video-player>
-          <video-minimal-skin>
-            <video id="video-element" slot="media" autoplay muted playsinline preload="auto"></video>
-          </video-minimal-skin>
-        </video-player>
-      </div>
-      <div id="youtube-player"></div>
-      <div id="placeholder">
-        <div id="no-channel">Pilih channel untuk mulai menonton</div>
+      <div class="player-stage">
+        <div id="toast" class="hidden">
+          <div class="spinner"></div>
+          <span id="toast-msg"></span>
+        </div>
+        <div id="video-box">
+          <video-player>
+            <video-minimal-skin>
+              <video id="video-el" slot="media" autoplay muted playsinline preload="auto"></video>
+            </video-minimal-skin>
+          </video-player>
+        </div>
+        <div id="yt-box"></div>
+        <div id="blank">
+          <span>Pilih channel</span>
+        </div>
       </div>
     </section>
   </main>
