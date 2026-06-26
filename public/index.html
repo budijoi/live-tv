@@ -13,6 +13,10 @@
       <span class="search-icon">&#128269;</span>
       <input id="search" type="text" placeholder="Cari channel...">
     </div>
+    <div class="header-actions">
+      <span id="last-updated" class="updated"></span>
+      <button id="refresh-btn" class="refresh-btn" title="Refresh channel">↻</button>
+    </div>
   </header>
 
   <main>
@@ -44,6 +48,13 @@
         <div id="yt-box"></div>
         <div id="blank">
           <span>Pilih channel</span>
+        </div>
+        <div id="panel" class="hidden">
+          <div class="panel-head">
+            <span id="panel-title"></span>
+            <button id="panel-close">&times;</button>
+          </div>
+          <div id="panel-grid" class="card-grid"></div>
         </div>
       </div>
     </section>
