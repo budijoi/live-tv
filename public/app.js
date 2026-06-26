@@ -1,13 +1,60 @@
 const channelList = document.getElementById('channel-list');
-const video = document.getElementById('video-player');
+const videoPlayer = document.getElementById('video-player');
+const videoElement = document.getElementById('video-element');
 const ytPlayer = document.getElementById('youtube-player');
 const placeholder = document.getElementById('placeholder');
 const noChannel = document.getElementById('no-channel');
-const resSelector = document.getElementById('res-selector');
-const resSelect = document.getElementById('res-select');
+const statusOverlay = document.getElementById('status-overlay');
+const statusMsg = document.getElementById('status-msg');
+const menuBtn = document.getElementById('menu-btn');
+const backdrop = document.getElementById('backdrop');
 
-let hls = null;
 let allChannels = [];
+let playerAbort = null;
+
+function sidebarClose() {
+  channelList.classList.remove('open');
+  backdrop.classList.remove('open');
+}
+
+function sidebarOpen() {
+  channelList.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+menuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (channelList.classList.contains('open')) {
+    sidebarClose();
+  } else {
+    sidebarOpen();
+  }
+});
+
+backdrop.addEventListener('click', sidebarClose);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') sidebarClose();
+});
+
+function setStatus(msg, isError) {
+  statusOverlay.classList.remove('hidden', 'error');
+  statusMsg.textContent = msg;
+  if (isError) statusOverlay.classList.add('error');
+}
+
+function hideStatus() {
+  statusOverlay.classList.add('hidden');
+}
+
+function resetPlayer() {
+  if (playerAbort) { playerAbort.abort(); playerAbort = null; }
+  videoElement.removeAttribute('src');
+  videoElement.load();
+  ytPlayer.innerHTML = '';
+  ytPlayer.style.display = 'none';
+  placeholder.classList.remove('hidden');
+  hideStatus();
+}
 
 function renderChannels(channels) {
   const groups = {};
@@ -36,35 +83,16 @@ function renderChannels(channels) {
       const id = el.dataset.id;
       const ch = allChannels.find(c => c.id === id);
       if (ch && ch.streamUrl) playChannel(ch, el);
+      sidebarClose();
     });
   });
-}
-
-function populateResolutions() {
-  if (!hls || !hls.levels) { resSelector.style.display = 'none'; return; }
-  resSelect.innerHTML = '<option value="-1">Auto</option>';
-  hls.levels.forEach((l, i) => {
-    const h = l.height || 0;
-    const label = h >= 2160 ? '4K' : h >= 1440 ? '1440p' : h >= 1080 ? '1080p' : h >= 720 ? '720p' : h >= 480 ? '480p' : h >= 360 ? '360p' : h >= 240 ? '240p' : h + 'p';
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = label + (l.bitrate ? ' (' + Math.round(l.bitrate / 1000) + 'kbps)' : '');
-    resSelect.appendChild(opt);
-  });
-  resSelector.style.display = 'flex';
 }
 
 function playChannel(channel, el) {
   channelList.querySelectorAll('.channel-item').forEach(i => i.classList.remove('active'));
   if (el) el.classList.add('active');
 
-  if (hls) { hls.destroy(); hls = null; }
-  video.src = '';
-  video.style.display = 'none';
-  ytPlayer.innerHTML = '';
-  ytPlayer.style.display = 'none';
-  resSelector.style.display = 'none';
-  placeholder.classList.remove('hidden');
+  resetPlayer();
 
   if (channel.type === 'youtube') {
     const m = channel.streamUrl.match(/(?:channel\/|@)([^/]+)/);
@@ -75,33 +103,41 @@ function playChannel(channel, el) {
       placeholder.classList.add('hidden');
     }
   } else {
-    video.style.display = 'block';
-    const url = channel.streamUrl;
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.play().then(() => placeholder.classList.add('hidden')).catch(() => {});
-    } else if (Hls.isSupported()) {
-      hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        placeholder.classList.add('hidden');
-        video.play().catch(() => {});
-        if (channel.online !== false) populateResolutions();
-      });
-      hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-        resSelect.value = data.level === -1 ? '-1' : '' + data.level;
-      });
-      hls.on(Hls.Events.ERROR, (e, data) => {
-        if (data.fatal) { hls.destroy(); hls = null; noChannel.textContent = 'Gagal: ' + channel.name; }
-      });
-    }
+    const ac = new AbortController();
+    playerAbort = ac;
+    const signal = ac.signal;
+
+    videoElement.src = channel.streamUrl;
+    setStatus('Memuat ' + channel.name + '...');
+
+    videoElement.addEventListener('loadedmetadata', () => {
+      placeholder.classList.add('hidden');
+      hideStatus();
+    }, { signal, once: true });
+
+    videoElement.addEventListener('waiting', () => {
+      setStatus('Buffering...');
+    }, { signal });
+
+    videoElement.addEventListener('playing', () => {
+      placeholder.classList.add('hidden');
+      hideStatus();
+    }, { signal });
+
+    videoElement.addEventListener('error', () => {
+      const ve = videoElement.error;
+      const msg = ve ? (ve.message || 'Kode ' + ve.code) : 'Gagal memuat stream';
+      setStatus('Error: ' + channel.name + ' (' + msg + ')', true);
+    }, { signal });
+
+    videoElement.addEventListener('stalled', () => {
+      setStatus('Stream tersendat...');
+    }, { signal });
+
+    videoElement.load();
+    videoElement.play().catch(() => {});
   }
 }
-
-resSelect.addEventListener('change', () => {
-  if (hls) hls.currentLevel = parseInt(resSelect.value);
-});
 
 noChannel.textContent = 'Memuat...';
 

@@ -7,18 +7,40 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 header {
   background: #1a1a2e;
-  padding: 16px 24px;
+  padding: 12px 16px;
   border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 30;
+  min-height: 52px;
 }
 
-header h1 { font-size: 1.4rem; color: #e94560; }
+#menu-btn {
+  background: none;
+  border: none;
+  color: #e94560;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: none;
+  line-height: 1;
+  touch-action: manipulation;
+}
 
-main { display: flex; flex: 1; overflow: hidden; }
+#menu-btn:hover { background: rgba(233,69,96,0.15); }
 
+header h1 { font-size: 1.2rem; color: #e94560; }
+
+main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+/* channel sidebar */
 #channel-list {
   width: 240px;
   background: #16213e;
@@ -42,28 +64,31 @@ main { display: flex; flex: 1; overflow: hidden; }
 }
 
 .channel-item {
-  padding: 8px 14px;
+  padding: 10px 14px;
   margin-bottom: 4px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   transition: background 0.15s;
   font-size: 0.85rem;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .channel-item:hover { background: #1a1a3e; }
 .channel-item.active { background: #e94560; font-weight: 600; }
+.channel-item:active { background: #c73a52; }
 
 .channel-logo {
-  width: 26px; height: 26px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   background: #333;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   color: #888;
   flex-shrink: 0;
 }
@@ -79,43 +104,70 @@ main { display: flex; flex: 1; overflow: hidden; }
 .dot.offline { background: #f44336; }
 .dot.unknown { background: #555; }
 
-.channel-badge { font-size: 0.55rem; color: #ff4444; margin-left: 2px; flex-shrink: 0; }
+.channel-badge { font-size: 0.6rem; color: #ff4444; margin-left: 2px; flex-shrink: 0; }
 
+/* backdrop */
+#backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+#backdrop.open { opacity: 1; }
+
+/* player section */
 #player {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   background: #000;
   position: relative;
+  min-height: 0;
 }
 
-#video-player { width: 100%; height: 100%; object-fit: contain; display: none; }
-#youtube-player { width: 100%; height: 100%; display: none; }
+#video-player { flex: 1; min-height: 0; background: #000; }
+
+#youtube-player { position: absolute; inset: 0; display: none; }
 #youtube-player iframe { width: 100%; height: 100%; border: 0; }
 
-#controls-bar {
+/* status toast — small overlay at bottom, doesn't block video */
+#status-overlay {
   position: absolute;
-  bottom: 60px;
-  right: 20px;
-  z-index: 10;
+  bottom: 64px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.85);
+  z-index: 20;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  white-space: nowrap;
 }
+#status-overlay.hidden { opacity: 0; }
+#status-overlay:not(.hidden) { opacity: 1; }
 
-#controls-bar label { color: #aaa; font-size: 0.75rem; }
-
-#res-select {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  font-size: 0.75rem;
-  cursor: pointer;
-  outline: none;
+.status-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid #555;
+  border-top-color: #e94560;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
 }
+#status-overlay.error .status-spinner { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#status-msg { color: #ddd; font-size: 0.8rem; }
+#status-overlay.error #status-msg { color: #f44336; }
 
 #placeholder {
   position: absolute; inset: 0;
@@ -125,7 +177,42 @@ main { display: flex; flex: 1; overflow: hidden; }
 #placeholder.hidden { display: none; }
 #no-channel { color: #555; font-size: 1.1rem; }
 
-@media (max-width: 640px) {
-  main { flex-direction: column; }
-  #channel-list { width: 100%; max-height: 140px; border-right: none; border-bottom: 1px solid #333; }
+/* mobile */
+@media (max-width: 768px) {
+  body { height: 100dvh; }
+
+  header { padding: 10px 12px; min-height: 48px; }
+  header h1 { font-size: 1rem; }
+  #menu-btn { display: block; }
+
+  #channel-list {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 280px;
+    max-width: 80vw;
+    z-index: 25;
+    padding: 8px;
+    border-right: none;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    will-change: transform;
+    transform: translateX(-100%);
+  }
+
+  #channel-list.open { transform: translateX(0); }
+
+  #channel-list .country-label:first-child { padding-top: 36px; }
+
+  #backdrop { display: block; }
+
+  .channel-item {
+    padding: 12px 14px;
+    font-size: 0.9rem;
+  }
+
+  .channel-logo { width: 32px; height: 32px; font-size: 0.75rem; }
+
+  .channel-badge { font-size: 0.65rem; }
+
+  #status-msg { font-size: 0.8rem; }
 }
